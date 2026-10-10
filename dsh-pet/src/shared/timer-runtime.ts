@@ -148,22 +148,44 @@ export function subscribeTimer(fn: () => void): () => void {
 // ---------- 面板 ----------
 
 const TIMER_CSS = [
-  '.dsh-pet-timer{position:fixed;z-index:2147483000;width:220px;padding:12px;background:#fff;color:#2b2b2b;',
-  'border:1px solid rgba(0,0,0,.12);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.2);',
-  "font:13px/1.5 'Microsoft YaHei UI','Segoe UI','PingFang SC',sans-serif;user-select:none}",
+  // 面板：海洋泡泡风——半透明奶白 + 轻微毛玻璃，不遮挡后方内容；圆角与柔和蓝色阴影
+  '.dsh-pet-timer{position:fixed;z-index:2147483000;width:188px;padding:12px 12px 14px;',
+  'background:rgba(245,252,255,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);',
+  'color:#1d5fa8;border:2px solid rgba(95,183,234,.55);border-radius:20px;',
+  'box-shadow:0 6px 22px rgba(42,111,219,.22),inset 0 1px 0 rgba(255,255,255,.7);',
+  "font:13px/1.5 'Microsoft JhengHei UI','PingFang TC','Segoe UI',sans-serif;user-select:none;",
+  'transition:opacity .2s ease;opacity:.94}',
+  '.dsh-pet-timer:hover{opacity:1}',
   '.dsh-pet-timer *{box-sizing:border-box}',
-  '.dsh-pet-timer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}',
-  '.dsh-pet-timer-title{font-weight:600}',
-  '.dsh-pet-timer-close{border:0;background:none;cursor:pointer;color:#888;font-size:16px;line-height:1;padding:2px 4px}',
-  '.dsh-pet-timer-display{font-size:28px;font-variant-numeric:tabular-nums;text-align:center;margin:6px 0}',
-  '.dsh-pet-timer-display.done{color:#d9480f}',
-  '.dsh-pet-timer-input{width:100%;padding:6px 8px;border:1px solid rgba(0,0,0,.2);border-radius:6px;font:inherit}',
-  '.dsh-pet-timer-err{color:#c92a2a;font-size:12px;min-height:16px;margin-top:4px}',
-  '.dsh-pet-timer-btns{display:flex;gap:6px;margin-top:6px}',
-  '.dsh-pet-timer-btns button{flex:1;padding:5px 0;border:1px solid rgba(0,0,0,.15);border-radius:6px;',
-  'background:#f7f7f7;cursor:pointer;font:inherit}',
-  '.dsh-pet-timer-btns button.primary{background:#2b63ff;border-color:#2b63ff;color:#fff}',
-  '.dsh-pet-timer-btns button:focus-visible{outline:2px solid #2b63ff;outline-offset:2px}',
+  // 标题行：小鲸鱼图标 + 标题
+  '.dsh-pet-timer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}',
+  '.dsh-pet-timer-title{font-weight:700;font-size:14px;color:#2a6fdb}',
+  '.dsh-pet-timer-title::before{content:"🐳 "}',
+  '.dsh-pet-timer-close{width:22px;height:22px;border:0;border-radius:50%;background:rgba(95,183,234,.18);',
+  'cursor:pointer;color:#2a6fdb;font-size:14px;line-height:1;padding:0}',
+  '.dsh-pet-timer-close:hover{background:rgba(95,183,234,.35)}',
+  // 大字倒计时：白色描边让数字在任何背景都清楚
+  '.dsh-pet-timer-display{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;',
+  'margin:4px 0 6px;color:#1d5fa8;text-shadow:0 2px 0 rgba(255,255,255,.9),0 0 10px rgba(255,255,255,.7)}',
+  '.dsh-pet-timer-display.done{color:#e0527a;animation:dsh-pet-timer-bob 1.2s ease-in-out infinite}',
+  '@keyframes dsh-pet-timer-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}',
+  '@media (prefers-reduced-motion: reduce){.dsh-pet-timer-display.done{animation:none}}',
+  // 输入框：圆角胶囊，聚焦时浮出蓝色光圈
+  '.dsh-pet-timer-input{width:100%;padding:6px 12px;border:1.5px solid rgba(95,183,234,.6);border-radius:999px;',
+  'background:rgba(255,255,255,.85);color:#1d5fa8;font:inherit;font-size:12px;outline:none}',
+  '.dsh-pet-timer-input::placeholder{color:#8fb8d8}',
+  '.dsh-pet-timer-input:focus{border-color:#2a6fdb;box-shadow:0 0 0 3px rgba(95,183,234,.3)}',
+  '.dsh-pet-timer-err{color:#e0527a;font-size:11px;min-height:16px;margin-top:4px;text-align:center}',
+  // 按钮：胶囊形，开始=海浪渐层，次要=白底蓝框
+  '.dsh-pet-timer-btns{display:flex;gap:6px;margin-top:4px}',
+  '.dsh-pet-timer-btns button{flex:1;padding:6px 0;border:1.5px solid rgba(95,183,234,.6);border-radius:999px;',
+  'background:rgba(255,255,255,.85);color:#2a6fdb;cursor:pointer;font:inherit;font-size:12px;font-weight:600;',
+  'transition:transform .12s ease,box-shadow .12s ease}',
+  '.dsh-pet-timer-btns button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 3px 8px rgba(42,111,219,.2)}',
+  '.dsh-pet-timer-btns button:active:not(:disabled){transform:translateY(0)}',
+  '.dsh-pet-timer-btns button.primary{background:linear-gradient(180deg,#7cc8f0,#2a6fdb);border-color:#2a6fdb;color:#fff}',
+  '.dsh-pet-timer-btns button:disabled{opacity:.45;cursor:default}',
+  '.dsh-pet-timer-btns button:focus-visible,.dsh-pet-timer-close:focus-visible{outline:2px solid #2a6fdb;outline-offset:2px}',
 ].join('');
 
 let timerCssInjected = false;
