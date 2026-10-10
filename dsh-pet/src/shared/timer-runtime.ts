@@ -6,9 +6,10 @@
 //   - 截止时刻用 Date.now() 对比（endAt），不依赖 setTimeout 的精度——后台标签页的
 //     定时器会被节流，但 tick 每次都按真实时间判断，到点最迟晚一个节拍，不会漏响；
 //   - 浏览器要求 AudioContext 在用户手势里创建/恢复，所以在「开始」点击时就解锁音频；
-//   - 纯逻辑（时长解析、mm:ss 格式化）在 src/shared/timer.ts，这里只管状态、声音与 DOM。
+//   - 纯逻辑（时长解析、mm:ss 格式化）在 ./timer.ts，这里只管状态、声音与 DOM；
+//   - 位于 src/shared（浏览器与桌面共用，见 shared/index.ts）：桌面 sprite.js 与浏览器 pet.ts 都从这里取同一份实现。
 
-import { formatRemaining, parseDuration, remainingMs } from '../shared/timer';
+import { formatRemaining, parseDuration, remainingMs } from './timer';
 
 type Status = 'idle' | 'running' | 'done';
 
@@ -181,7 +182,14 @@ export interface TimerDialogMount {
 }
 
 /** 打开计时面板（定位在宠物右上角，与对话弹窗同一套落点）。关闭面板不影响正在进行的计时。 */
-export function mountTimerDialog(opts: { x: number; y: number }): TimerDialogMount {
+export function mountTimerDialog(opts: {
+  x: number;
+  y: number;
+  /** 弹窗关闭时调用（宿主据此复位交互/穿透状态）；计时本身不受影响 */
+  onClose?: () => void;
+  /** 弹窗允许占用的矩形（视口局部坐标）；缺省 = 整个视口 */
+  clamp?: { x: number; y: number; w: number; h: number };
+}): TimerDialogMount {
   injectTimerCss();
 
   const root = document.createElement('div');
@@ -232,8 +240,12 @@ export function mountTimerDialog(opts: { x: number; y: number }): TimerDialogMou
 
   // 落点：右上角，超出视口夹回
   const rr = root.getBoundingClientRect();
-  root.style.left = Math.max(4, Math.min(opts.x, window.innerWidth - rr.width - 4)) + 'px';
-  root.style.top = Math.max(4, Math.min(opts.y, window.innerHeight - rr.height - 4)) + 'px';
+  const c =
+    opts.clamp && Number.isFinite(opts.clamp.x + opts.clamp.y + opts.clamp.w + opts.clamp.h)
+      ? opts.clamp
+      : { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
+  root.style.left = Math.max(c.x + 4, Math.min(opts.x, c.x + c.w - rr.width - 4)) + 'px';
+  root.style.top = Math.max(c.y + 4, Math.min(opts.y, c.y + c.h - rr.height - 4)) + 'px';
 
   const render = (): void => {
     const s = getTimerState();
@@ -281,10 +293,14 @@ export function mountTimerDialog(opts: { x: number; y: number }): TimerDialogMou
   render();
   input.focus();
 
+  let closed = false;
   const close = (): void => {
+    if (closed) return;
+    closed = true;
     clearInterval(interval);
     unsubscribe();
     root.remove();
+    opts.onClose?.();
   };
   closeX.addEventListener('click', close);
   return { close };

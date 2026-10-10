@@ -1,7 +1,7 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { cancelTimer, dismissAlarm, getTimerState, startTimer, subscribeTimer } from './timer';
+import { cancelTimer, dismissAlarm, getTimerState, startTimer, subscribeTimer } from './timer-runtime';
 
 // 计时状态机的单测（不依赖 DOM / 音频：测试环境没有 window，音频解锁与响铃会被安全跳过）
 afterEach(() => {
