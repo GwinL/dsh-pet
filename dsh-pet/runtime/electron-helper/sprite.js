@@ -124,6 +124,8 @@ class PetSprite {
     // 计时面板（shared timer-runtime）：句柄 + 开启标记；倒计时本身是 shared 模块单例，关面板不取消计时
     this.timerClose = null;
     this.timerOpen = false;
+    // 计时到点：宠物被吓一跳（订阅在 dispose 时取消）
+    this.offTimerFire = S.subscribeTimerFire(() => this.onTimerFire());
 
     // DOM：sprite 钉在窗口内 (margin.l, margin.t)；宠物"位置"= sprite 位置，窗口随余量外扩
     this.el = document.createElement('div');
@@ -230,6 +232,10 @@ class PetSprite {
 
   dispose() {
     this.ac.abort();
+    if (this.offTimerFire) {
+      this.offTimerFire();
+      this.offTimerFire = null;
+    }
     if (this.bubbleTimer !== null) window.clearTimeout(this.bubbleTimer);
     if (this.whisperTimer !== null) window.clearTimeout(this.whisperTimer);
     if (this.workTimer !== null) window.clearTimeout(this.workTimer);
@@ -1287,6 +1293,14 @@ class PetSprite {
     window.__dshPetDebug.chatOpen = true;
     this.syncInputBusy();
     this.setInteractive(true);
+  }
+
+  // 计时到点：宠物被吓一跳（播一次「打瞌睡被惊醒」，播完自然回到待机）；拖拽中不打断
+  onTimerFire() {
+    if (this.dragState.active || this.dragState.dragging) return;
+    this.stopThrow();
+    this.stopMove();
+    this.playOnce(S.TIMER_STARTLE_ANIM);
   }
 
   showTimerFromMenu() {

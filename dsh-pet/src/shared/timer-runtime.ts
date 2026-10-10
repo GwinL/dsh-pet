@@ -19,6 +19,20 @@ interface TimerState {
 }
 
 let state: TimerState = { status: 'idle', endAt: 0 };
+
+/** 计时到点时宠物播放的反应动画（现成素材：打瞌睡被惊醒 = 被吓一跳） */
+export const TIMER_STARTLE_ANIM = '打瞌睡被惊醒';
+
+/** 计时到点的订阅者（宠物用来做被吓一跳的动作）；与响铃、通知分开，互不影响 */
+const fireListeners = new Set<() => void>();
+
+/** 订阅「计时到点」事件；返回取消订阅函数 */
+export function subscribeTimerFire(fn: () => void): () => void {
+  fireListeners.add(fn);
+  return () => {
+    fireListeners.delete(fn);
+  };
+}
 let tickHandle: ReturnType<typeof setInterval> | undefined;
 const listeners = new Set<() => void>();
 
@@ -86,6 +100,13 @@ function fire(): void {
   stopTicking();
   state = { status: 'done', endAt: state.endAt };
   startAlarm();
+  for (const fn of fireListeners) {
+    try {
+      fn();
+    } catch {
+      /* 单个订阅者出错不影响其他人 */
+    }
+  }
   if (typeof document !== 'undefined' && document.hidden && typeof Notification !== 'undefined') {
     if (Notification.permission === 'granted') {
       try {

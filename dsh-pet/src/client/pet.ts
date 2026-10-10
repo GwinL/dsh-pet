@@ -45,7 +45,7 @@ import { TOOLTIP_CLASS, TOOLTIP_CSS, TOOLTIP_GAP_RATIO, tooltipPlacement } from 
 // 对话弹窗：与桌面共用同一份组件（数据经 host /chat 读写同一份记忆）
 import { mountChatDialog } from '../shared/chat';
 // 计时器面板（浏览器端；倒计时状态为模块单例，关闭面板不取消计时）
-import { mountTimerDialog } from '../shared/timer-runtime';
+import { mountTimerDialog, subscribeTimerFire, TIMER_STARTLE_ANIM } from '../shared/timer-runtime';
 import { petBridge } from './settings';
 import { notifyFromFrame } from './notify';
 
@@ -398,6 +398,18 @@ export function makePetUI(rt: {
         if (bubbleTimerRef.current !== null) window.clearTimeout(bubbleTimerRef.current);
         if (whisperBubbleTimerRef.current !== null) window.clearTimeout(whisperBubbleTimerRef.current);
       },
+      [],
+    );
+    // 计时到点：宠物被吓一跳（播一次，播完自然回到待机；拖拽中不打断）
+    useEffect(
+      () =>
+        subscribeTimerFire(() => {
+          if (dragRef.current.active || dragRef.current.dragging) return;
+          stopMove();
+          setSeq((s) => s + 1); // 同名动画也要重新走一遍 switchTo（与菜单点播同一做法）
+          setOnce(true);
+          setAnim(TIMER_STARTLE_ANIM);
+        }),
       [],
     );
     // 卸载时关闭可能开着的右键菜单与对话弹窗（挂载的 DOM 一并清理）
