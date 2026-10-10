@@ -44,6 +44,8 @@ import {
 import { TOOLTIP_CLASS, TOOLTIP_CSS, TOOLTIP_GAP_RATIO, tooltipPlacement } from '../shared/tooltip';
 // 对话弹窗：与桌面共用同一份组件（数据经 host /chat 读写同一份记忆）
 import { mountChatDialog } from '../shared/chat';
+// 计时器面板（浏览器端；倒计时状态为模块单例，关闭面板不取消计时）
+import { mountTimerDialog } from './timer';
 import { petBridge } from './settings';
 import { notifyFromFrame } from './notify';
 
@@ -207,6 +209,7 @@ export function makePetUI(rt: {
     const menuRef = useRef<{ close: () => void } | null>(null);
     // 对话弹窗（与桌面共用 shared 组件）：当前挂载的 close() 句柄，卸载/重开前清理
     const chatRef = useRef<{ close: () => void } | null>(null);
+    const timerRef = useRef<{ close: () => void } | null>(null);
 
     // 配置变化即时跟随（容器重新合并 / 设置页保存后通过 petBridge.reload 触发）
     useEffect(() => {
@@ -407,6 +410,10 @@ export function makePetUI(rt: {
         if (chatRef.current) {
           chatRef.current.close();
           chatRef.current = null;
+        }
+        if (timerRef.current) {
+          timerRef.current.close();
+          timerRef.current = null;
         }
       },
       [],
@@ -1354,6 +1361,17 @@ export function makePetUI(rt: {
         });
         return;
       }
+      if (leaf.action === 'timer') {
+        // 计时：小面板（输入分钟数开始倒计时，时间到响铃）。计时状态是模块单例，
+        // 关闭面板不会取消正在进行的计时；这里只负责打开面板（落点同对话弹窗）。
+        if (timerRef.current) timerRef.current.close();
+        const hitRect = stageRef.current?.querySelector('.dsh-pet-hit')?.getBoundingClientRect();
+        timerRef.current = mountTimerDialog({
+          x: hitRect ? hitRect.right + 6 : window.innerWidth - 256,
+          y: hitRect ? hitRect.top + 6 : 8,
+        });
+        return;
+      }
       if (leaf.action === 'home') {
         // 回到初始位置：停漫游/移动/抛掷，清掉拖拽/漫游留下的会话位置，回配置角落
         stopThrow();
@@ -1386,6 +1404,7 @@ export function makePetUI(rt: {
       const tree: MenuNode[] = [
         { label: '碎碎念', action: 'whisper' },
         { label: '对话', action: 'chat' },
+        { label: '计时', action: 'timer' },
         { label: '回到初始位置', action: 'home' },
         ...buildMenuTree(petAnims),
       ];
